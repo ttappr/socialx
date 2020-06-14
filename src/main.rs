@@ -13,15 +13,33 @@ use round::*;
 
 use itertools::{Itertools, enumerate, all};
 use rand::prelude::*;
+use rand::{thread_rng, seq::IteratorRandom};
 
+macro_rules! randint {
+    ( $start:expr, $end:expr ) => {
+        rand::thread_rng().gen_range($start, $end + 1)
+    };
+}
+
+macro_rules! sample {
+    ( $iterator:expr, $amount:expr ) => {
+        $iterator.choose_multiple(&mut rand::thread_rng(), $amount)
+    };
+}
+
+macro_rules! filter {
+    ( $iterable:expr, $pred:expr ) => {
+        $iterable.iter().filter($pred)
+    };
+}
 
 fn main() {
-    let num_attempts         = 300_000;
-    let num_participants     = 70_usize;
+    let num_attempts         = 100_000;
+    let num_participants     = 70;
     let num_rounds           =  5;
-    let num_groups_per_round = 10_usize;
+    let num_groups_per_round = 10;
     let num_groups_total     = num_groups_per_round * num_rounds;
-    let num_regroups         =  5;
+    let num_regroups         =  7;
     let group_size           = (num_participants / num_groups_per_round) as u32;
 
     let mut parts  = Participants::new();
@@ -33,13 +51,11 @@ fn main() {
     let mut hgroup_vec   = groups.hcalloc(num_groups_total, group_size);
     let     hround_vec   = rounds.hcalloc(num_rounds);
 
-    let mut group_slices = Vec::<Vec<HGroup>>::new();
-
-    
 
     let mut best_num_grouped = 0;
     let mut best_rounds_str  = String::from("");
 
+    #[allow(unused_labels)]
     'start_fresh: for attempt_i in 0..num_attempts {
         let mut num_grouped = rounds.num_grouped(&hround_vec, &groups);
         if num_grouped > best_num_grouped {
@@ -72,42 +88,55 @@ fn main() {
             
             parts.prepare_for_new_round();
             rounds.add_groups(hround, hgroup_slice);
+            
             if round_i > 0 {
                 shuffle!(hpart_vec_a);
             }
-            
+     
             'grouping_participants: for &hpart_a in &hpart_vec_a {
-                
+
+                let mut ps = ParticipantSet::new();
+            
                 'trying_regroups: for _ in 0..num_regroups {
-                
+                    
                     if parts.try_join_groups(hpart_a, 
-                                             &hgroup_slice, 
-                                             &mut groups    ) {
+                                             hround,
+                                             &rounds, 
+                                             &mut groups ) {
                                              
                         // Participant found group, move to next participant.
                         continue 'grouping_participants;
                     } else {
                         // Didn't find a group - get another participant to 
                         // regroup to see if an opening can be made.
-                        
-                        shuffle!(hpart_vec_b);
-                        
-                        for &hpart_b in &hpart_vec_b {
 
-                            if !parts.is_grouped(hpart_b) { 
-                                // Skip ungrouped participants.
+                        //shuffle!(hpart_vec_b);
+
+                        for &hpart_b in &hpart_vec_b {
+                            if ps.has(hpart_b) ||
+                               !parts.is_grouped(hpart_b) ||
+                              (randint!(0, 1) != 0 &&
+                               !parts.is_acquainted_participant(hpart_a, 
+                                                                hpart_b)) {
                                 continue;
+                            }   
+                            let mut round_num = randint!(1, round_i);
+                            match parts.try_regroup(hpart_b, 
+                                                    hround_vec[round_num],
+                                                    &rounds,
+                                                    &mut groups ) {
+                                Ok(hpart_c) => {
+                                    if hpart_c != HPARTICIPANT_NULL {
+                                        ps.add(hpart_c);
+                                    }
+                                    continue 'trying_regroups;
+                                },
+                                Err(_) => { 
+                                    //shuffle!(hpart_vec_b);
+                                    //continue 'trying_regroups;
+                                },
                             }
-                            if parts.try_regroup(hpart_b, 
-                                                 &hgroup_slice, 
-                                                 &mut groups    ).is_ok() {
-                                // One regrouped, see if the current 
-                                // participant can now find a group.
-                                continue 'trying_regroups;  
-                            } 
                         }
-                        // None of the others could regroup. Restart.
-                        continue 'start_fresh;
                     }
                 }
             }

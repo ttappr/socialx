@@ -127,6 +127,9 @@ impl Groups {
     pub fn handle_vec(&self) -> Vec<HGroup> {
         GroupIter::get_vec(self.insts.len())
     }
+    pub fn has(&self, hg: HGroup, hp: HParticipant) -> bool {
+        self.get(hg).members.has(hp)
+    }
 }
 
 /// An iterator over group handles in the Groups object.

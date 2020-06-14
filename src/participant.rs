@@ -1,5 +1,6 @@
 
 use crate::group::*;
+use crate::round::*;
 
 use std::fmt;
 use rand::prelude::*;
@@ -141,6 +142,11 @@ impl Participants {
 
         groups.member_set(hg).has_common(&self.get(hp).acquaintances)
     }
+    pub fn is_acquainted_participant(&self,
+                                     hp     : HParticipant,
+                                     hop    : HParticipant   ) -> bool {
+        self.get(hp).acquaintances.has(hop)
+    }
     /// Updates the acquantances of the Participant and others.
     /// The acquaintances of the Participant are updated with all the members
     /// of the group, and each group member's acquantances are updated with the
@@ -155,7 +161,9 @@ impl Participants {
         self.mget(hp).acquaintances.add_set(&oms);
         
         for hop in oms.iter() {
-            self.mget(hop).acquaintances.add(hp);
+            if hop != hp {
+                self.mget(hop).acquaintances.add(hp);
+            }
         }
     }
     /// Indicates how many acquantances are in a certain Group.
@@ -197,12 +205,13 @@ impl Participants {
     /// case.
     pub fn try_join_groups(&mut self,
                            hp       : HParticipant,
-                           hgs      : &[HGroup],
+                           hr       : HRound,
+                           rounds   : &Rounds,
                            groups   : &mut Groups    ) -> bool {
                            
-        let mut gv = hgs.to_vec();
+        let mut gv = rounds.groups(hr);
         //shuffle!(gv);
-        for hg in gv {
+        for &hg in gv {
             if self.try_join(hp, hg, groups) {
                 return true;
             }
@@ -214,7 +223,17 @@ impl Participants {
                        hp       : HParticipant,
                        hg       : HGroup,
                        groups   : &mut Groups ) {
+                       
+        let group_set = groups.member_set(hg);
+        self.mget(hp).acquaintances.remove_set(&group_set);
+
+        for hop in groups.member_set(hg).iter() {
+            if hop != hp {
+                self.mget(hop).acquaintances.remove(hp);
+            }
+        }
         groups.remove(hg, hp);
+
         self.mget(hp).group = HGROUP_NULL;
     }
     /// Gets the Participant to find another Group.
@@ -225,15 +244,21 @@ impl Participants {
     /// with. In the case where no regroup was possible, Err(()) is returned.
     pub fn try_regroup(&mut self,
                        hp       : HParticipant,
-                       hgs      : &[HGroup],
+                       hr       : HRound,
+                       rounds   : &Rounds,
                        groups   : &mut Groups    ) -> Result<HParticipant,()> {
                        
-        let mut result  = Err(());
-        let mut hg      = self.get(hp).group;
-        let mut gvec    = hgs.to_vec();
+        let mut result = Err(());
+        let mut hg     = rounds.participant_group(hr, hp, groups);
+
+        if hg == HGROUP_NULL {
+            return result;
+        }
+        
+        let mut gvec = rounds.groups(hr).clone();
         shuffle!(gvec);
         
-        'outer: for hog in gvec {
+        'outer: for &hog in &gvec {
             if hog == hg { continue; }
             
             let num_acq = self.num_acquaint_group(hp, hog, groups);
@@ -276,7 +301,6 @@ impl Participants {
         }
         result  
     }
-
 }
 
 /// Represents a set of Participants.
@@ -308,6 +332,10 @@ impl ParticipantSet {
     pub fn remove(&mut self, hp: HParticipant) {
         debug_assert!(self.value & 1 << hp.idx != 0);
         self.value ^= 1 << hp.idx;
+    }
+    #[inline]
+    pub fn remove_set(&mut self, other: &ParticipantSet) {
+        self.value ^= other.value;
     }
     pub fn to_string(&self, parts: &Participants) -> String {
         let mut p_strs = vec![];

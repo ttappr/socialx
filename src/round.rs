@@ -77,6 +77,17 @@ impl Rounds {
         }
         total
     }
+    pub fn participant_group(&self, 
+                             hr     : HRound, 
+                             hp     : HParticipant, 
+                             groups : &Groups       ) -> HGroup {
+        for &hg in self.groups(hr) {
+            if groups.has(hg, hp) {
+                return hg;
+            }
+        }
+        HGROUP_NULL
+    }
     pub fn to_string(&self, 
                      hr     : HRound, 
                      groups : &Groups,
