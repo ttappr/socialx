@@ -13,16 +13,33 @@ struct Round {
 }
 
 pub struct Rounds {
-    insts: Vec<Round>,
+    next_idx : usize,
+    insts    : Vec<Round>,
 }
 
 impl Rounds {
-    pub fn new(num: usize) -> Self {
-        let mut rounds = vec![];
+    pub fn new() -> Self {
+        Rounds { next_idx: 0, insts: vec![] }
+    }
+    pub fn hcalloc(&mut self, num: usize) -> Vec<HRound> {
+        let mut handles = vec![];
+        let     start   = self.next_idx;
+        let     end     = start + num;
+        self.next_idx   = end;
         for i in 0..num {
-            rounds.push(Round { id: i + 1, groups: vec![] });
+            self.insts.push(Round { id: i + 1, groups: vec![] });
+            handles.push(HRound { idx: i });
         }
-        Rounds { insts: rounds }
+        handles
+    }
+    pub fn free_all(&mut self) {
+        self.insts.clear();
+        self.next_idx = 0;
+    }
+    pub fn reset(&mut self) {
+        for round in &mut self.insts {
+            round.groups.clear();
+        }
     }
     #[inline]
     fn get(&self, hr: HRound) -> &Round {
@@ -38,10 +55,27 @@ impl Rounds {
     pub fn add(&mut self, hr: HRound, hg: HGroup) {
         self.mget(hr).groups.push(hg);
     }
+    pub fn add_groups(&mut self, hr: HRound, hgs: &[HGroup]) {
+        for &hg in hgs {
+            self.add(hr, hg);
+        }
+    }
     pub fn clear(&mut self) {
         for round in &mut self.insts {
             round.groups.clear();
         }
+    }
+    pub fn groups(&self, hr: HRound) -> &Vec<HGroup> {
+        &self.get(hr).groups
+    }
+    pub fn num_grouped(&self, hrs: &[HRound], groups: &Groups) -> u32 {
+        let mut total = 0;
+        for &hr in hrs {
+            for &hg in &self.get(hr).groups {
+                total += groups.num_members(hg);
+            }
+        }
+        total
     }
     pub fn to_string(&self, 
                      hr     : HRound, 
@@ -49,11 +83,46 @@ impl Rounds {
                      parts  : &Participants  ) -> String {
                            
         let mut group_strs = vec![];
-        for hg in groups.iter() {
+        for &hg in self.get(hr).groups.iter() {
             group_strs.push(groups.to_string(hg, parts));
         }
-        format!("Round_{}:\n    ", group_strs.join("\n    "))
+        format!("Round_{}:\n    {}\n", self.get(hr).id, 
+                                       group_strs.join("\n    "))
+    }
+    pub fn to_string_multi(&self,
+                           hrs    : &[HRound],
+                           groups : &Groups,
+                           parts  : &Participants ) -> String {
+                           
+        let mut group_strs = vec![];
+        for &hr in hrs {
+            group_strs.push(self.to_string(hr, groups, parts));
+        }
+        group_strs.join("\n")
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

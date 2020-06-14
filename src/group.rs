@@ -34,40 +34,39 @@ pub struct Groups {
 }
 
 impl Groups {
-    /// Creates a new Groups object with the specified allocation.
-    pub fn new(num: usize, size: u32) -> Self {
-        let mut groups = vec![];
-        for i in 0..num {
-            groups.push(Group { id: i + 1, 
-                                size, 
-                                members: ParticipantSet::new() });
-        }
-        Groups { next_idx: num, insts: groups }
+    /// Creates a new Groups object.
+    pub fn new() -> Self {
+        Groups { next_idx: 0, insts: vec![] }
     }
     /// Creates `num` new instances of Group and returns their handles.
     /// Their id's begin where the last allocation left off.
     pub fn hcalloc(&mut self, num: usize, size: u32) -> Vec<HGroup> {
-        let mut groups  = vec![];
         let mut handles = vec![];
-        let start       = self.next_idx;
-        let end         = start + num;
+        let     start   = self.next_idx;
+        let     end     = start + num;
         self.next_idx   = end;
         for i in start..end {
-            groups.push(Group { id: i + 1, 
+            self.insts.push(Group { id: i + 1, 
                                 size, 
                                 members: ParticipantSet::new() });
             handles.push(HGroup { idx: i });
         }
         handles
     }
+    pub fn free_all(&mut self) {
+        self.insts.clear();
+        self.next_idx = 0;
+    }
     /// Returns the number of Group instances.
     pub fn count(&self) -> usize {
         self.insts.len()
     }
     /// Returns `true` if the participant `hp` has acquaintances in the group.
+    /*
     pub fn is_acquainted(&self, hg: HGroup, hp: HParticipant) -> bool {
         self.get(hg).members.has(hp)
     }
+    */
     /// Returns a handle for the Group at the specified index.
     pub fn hget(&self, idx: usize) -> HGroup {
         HGroup { idx }
@@ -86,7 +85,7 @@ impl Groups {
         self.insts.len()
     }
     /// Clears the member lists of all groups.
-    pub fn clear(&mut self) {
+    pub fn reset(&mut self) {
         for g in &mut self.insts {
             g.members.clear();
         }
@@ -94,7 +93,7 @@ impl Groups {
     /// Returns the string representation for the group.
     pub fn to_string(&self, hg: HGroup, parts: &Participants) -> String {
         let group = self.get(hg);
-        format!("Group_{}: {}", 
+        format!("Group_{:<2}: {}", 
                 group.id, 
                 group.members.to_string(parts))
     }
@@ -116,6 +115,9 @@ impl Groups {
     pub fn full(&self, hg: HGroup) -> bool {
         let g = self.get(hg);
         g.members.count() >= g.size
+    }
+    pub fn num_members(&self, hg: HGroup) -> u32 {
+        self.get(hg).members.count()
     }
     /// Returns an iterator that emits HGroup handles for the Groups object.
     pub fn iter(&self) -> GroupIter {

@@ -11,6 +11,7 @@ type  SetType                = u128;
 const SET_MASK_BIT : SetType = (SetType::MAX >> 1) + 1;
 const N_SET_BITS   : u32     = 128;
 
+#[macro_export]
 macro_rules! shuffle {
     ( $ex:expr ) => { $ex.shuffle(&mut rand::thread_rng()) };
 }
@@ -27,6 +28,7 @@ impl PartialEq for HParticipant {
         self.idx == other.idx
     }
 }
+
 
 /// The actual Participant.
 /// This is the non-public object behind the handles. It tracks the established
@@ -49,27 +51,16 @@ pub struct Participants {
 }
 
 impl Participants {
-    pub fn new(num: usize) -> Self {
-        let mut instances = vec![];
-        for i in 0..num {
-            instances.push(
-                Participant { 
-                    id            : i + 1,
-                    group         : HGROUP_NULL,
-                    acquaintances : ParticipantSet { value: 0 },
-                }
-            );
-        }
-        Participants { next_idx: num, insts: instances }
+    pub fn new() -> Self {
+        Participants { next_idx: 0, insts: vec![] }
     }
     pub fn hcalloc(&mut self, num: usize) -> Vec<HParticipant> {
-        let mut parts   = vec![];
         let mut handles = vec![];
-        let start       = self.next_idx;
-        let end         = start + num;
+        let     start   = self.next_idx;
+        let     end     = start + num;
         self.next_idx   = end;
         for i in start..end {
-            parts.push(
+            self.insts.push(
                 Participant { id            : i + 1, 
                               group         : HGROUP_NULL,
                               acquaintances : ParticipantSet { value: 0 } 
@@ -78,6 +69,11 @@ impl Participants {
             handles.push(HParticipant { idx: i });
         }
         handles
+    }
+    /// Clears the internal vector of Participants.
+    pub fn free_all(&mut self) {
+        self.insts.clear();
+        self.next_idx = 0;
     }
     /// Returns the handle requested by position in the internal vector.
     pub fn hget(&self, idx: usize) -> HParticipant {
@@ -111,7 +107,7 @@ impl Participants {
         ParticipantIter::new(self.insts.len()).collect()
     }
     pub fn to_string(&self, hp: HParticipant) -> String {
-        format!("{:>2}", hp.idx)
+        format!("{:>2}", self.get(hp).id)
     }
     /// Returns the Group for the Participant.
     #[inline]
@@ -119,18 +115,21 @@ impl Participants {
         self.get(hp).group
     }
     /// Sets up the Participants for another round of grouping.
-    pub fn prepare_next_round(&mut self) {
+    pub fn prepare_for_new_round(&mut self) {
         for p in &mut self.insts {
             p.group = HGROUP_NULL;
         }
     }
     /// Resets all the Participants.
     /// They will be ungrouped, and their acquaintances sets will be wiped.
-    pub fn clear(&mut self) {
+    pub fn reset(&mut self) {
         for p in &mut self.insts {
             p.group = HGROUP_NULL;
             p.acquaintances.clear();
         }
+    }
+    pub fn sort_slice(&self, hslice: &mut [HParticipant]) {
+        hslice.sort_by_key(|hp| hp.idx);
     }
     /// Indicates whether a Participant has already grouped with another.
     /// If the group contains another member, or members, the participant
@@ -139,7 +138,8 @@ impl Participants {
                          hp     : HParticipant,
                          hg     : HGroup,
                          groups : &Groups        ) -> bool {
-        groups.is_acquainted(hg, hp)
+
+        groups.member_set(hg).has_common(&self.get(hp).acquaintances)
     }
     /// Updates the acquantances of the Participant and others.
     /// The acquaintances of the Participant are updated with all the members
@@ -197,10 +197,11 @@ impl Participants {
     /// case.
     pub fn try_join_groups(&mut self,
                            hp       : HParticipant,
+                           hgs      : &[HGroup],
                            groups   : &mut Groups    ) -> bool {
                            
-        let mut gv = groups.handle_vec();
-        shuffle!(gv);
+        let mut gv = hgs.to_vec();
+        //shuffle!(gv);
         for hg in gv {
             if self.try_join(hp, hg, groups) {
                 return true;
@@ -224,11 +225,12 @@ impl Participants {
     /// with. In the case where no regroup was possible, Err(()) is returned.
     pub fn try_regroup(&mut self,
                        hp       : HParticipant,
+                       hgs      : &[HGroup],
                        groups   : &mut Groups    ) -> Result<HParticipant,()> {
                        
         let mut result  = Err(());
         let mut hg      = self.get(hp).group;
-        let mut gvec    = groups.handle_vec();
+        let mut gvec    = hgs.to_vec();
         shuffle!(gvec);
         
         'outer: for hog in gvec {
@@ -274,6 +276,7 @@ impl Participants {
         }
         result  
     }
+
 }
 
 /// Represents a set of Participants.
@@ -307,11 +310,13 @@ impl ParticipantSet {
         self.value ^= 1 << hp.idx;
     }
     pub fn to_string(&self, parts: &Participants) -> String {
-        let mut pstrs = vec![];
-        for hp in self.iter() {
-            pstrs.push(parts.to_string(hp));
+        let mut p_strs = vec![];
+        let mut hp_vec = ParticipantSetIter::get_vec(self.value);
+        hp_vec.sort_by_key(|hp| hp.idx);
+        for hp in hp_vec {
+            p_strs.push(parts.to_string(hp));
         }
-        format!("[{}]", pstrs.join(", "))
+        format!("[{}]", p_strs.join(", "))
     }
     /// Clears the set.
     pub fn clear(&mut self) {
@@ -320,7 +325,7 @@ impl ParticipantSet {
     /// Indicates whether the Participant is in the set.
     #[inline]
     pub fn has(&self, hp: HParticipant) -> bool {
-        self.value & 1 << hp.idx != 0
+        self.value & (1 << hp.idx) != 0
     }
     /// Returns an iterator over the Participants in the set.
     /// The iterator will return HParticipant handles for each participant in
@@ -337,6 +342,10 @@ impl ParticipantSet {
     #[inline]
     pub fn num_common(&self, other: &ParticipantSet) -> u32 {
         (self.value & other.value).count_ones()
+    }
+    #[inline]
+    pub fn has_common(&self, other: &ParticipantSet) -> bool {
+        self.value & other.value != 0
     }
     /// Returns a set with the common members.
     #[inline]
