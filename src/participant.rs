@@ -2,7 +2,6 @@
 use crate::group::*;
 use crate::round::*;
 
-use std::fmt;
 use rand::prelude::*;
 
 pub const HPARTICIPANT_NULL: HParticipant = HParticipant { idx: usize::MAX };
@@ -209,7 +208,7 @@ impl Participants {
                            rounds   : &Rounds,
                            groups   : &mut Groups    ) -> bool {
                            
-        let mut gv = rounds.groups(hr);
+        let gv = rounds.groups(hr);
         //shuffle!(gv);
         for &hg in gv {
             if self.try_join(hp, hg, groups) {

@@ -1,7 +1,4 @@
 
-#![allow(unused_macros, bare_trait_objects, unused_imports, unused_variables,
-         unused_mut, dead_code)]
-
 mod participant;
 mod group;
 mod round;
@@ -11,9 +8,9 @@ use participant::*;
 use round::*;
 
 
-use itertools::{Itertools, enumerate, all};
+use itertools::enumerate;
 use rand::prelude::*;
-use rand::{thread_rng, seq::IteratorRandom};
+//use rand::{thread_rng, seq::IteratorRandom};
 
 macro_rules! randint {
     ( $start:expr, $end:expr ) => {
@@ -21,25 +18,13 @@ macro_rules! randint {
     };
 }
 
-macro_rules! sample {
-    ( $iterator:expr, $amount:expr ) => {
-        $iterator.choose_multiple(&mut rand::thread_rng(), $amount)
-    };
-}
-
-macro_rules! filter {
-    ( $iterable:expr, $pred:expr ) => {
-        $iterable.iter().filter($pred)
-    };
-}
-
 fn main() {
-    let num_attempts         = 100_000;
-    let num_participants     = 70;
-    let num_rounds           =  5;
-    let num_groups_per_round = 10;
+    let num_attempts         = 25_000;
+    let num_participants     = 15; //70;
+    let num_rounds           =  7; //5;
+    let num_groups_per_round =  5; //10;
     let num_groups_total     = num_groups_per_round * num_rounds;
-    let num_regroups         =  7;
+    let num_regroups         = num_participants * 2;
     let group_size           = (num_participants / num_groups_per_round) as u32;
 
     let mut parts  = Participants::new();
@@ -48,7 +33,7 @@ fn main() {
     
     let mut hpart_vec_a  = parts.hcalloc(num_participants);
     let mut hpart_vec_b  = hpart_vec_a.clone();    
-    let mut hgroup_vec   = groups.hcalloc(num_groups_total, group_size);
+    let     hgroup_vec   = groups.hcalloc(num_groups_total, group_size);
     let     hround_vec   = rounds.hcalloc(num_rounds);
 
 
@@ -57,17 +42,21 @@ fn main() {
 
     #[allow(unused_labels)]
     'start_fresh: for attempt_i in 0..num_attempts {
-        let mut num_grouped = rounds.num_grouped(&hround_vec, &groups);
+        
+        let num_grouped = rounds.num_grouped(&hround_vec, &groups);
+        
         if num_grouped > best_num_grouped {
-            println!("Best so far: {}", num_grouped);
+            println!("Best so far: {:>3} placements out of {:>3}.", 
+                     num_grouped, num_rounds * num_participants);
+                     
             best_num_grouped = num_grouped;
             best_rounds_str  = rounds.to_string_multi(&hround_vec, 
                                                       &groups, 
                                                       &parts);
         }
-        //if all(&hgroup_vec, |&hg| groups.full(hg)) {
         if num_grouped >= (num_rounds * num_participants) as u32 {
             // If all groups are full, the problem is solved.
+            println!("\nSOLVED! ({} iterations)\n", attempt_i);
             break;
         }
         if attempt_i > 0 {
@@ -80,14 +69,18 @@ fn main() {
         
         #[allow(unused_labels)]
         'another_round: for (round_i, &hround) in enumerate(&hround_vec) {
+            // Slice the groups per round.
             let n_groups     = num_groups_per_round;
             let gr_start     = n_groups * round_i;
             let gr_end       = gr_start + n_groups;
             
             let hgroup_slice = &hgroup_vec[gr_start..gr_end];
             
-            parts.prepare_for_new_round();
+            // Add the groups to the round.
             rounds.add_groups(hround, hgroup_slice);
+            
+            // Prepare the participants to be grouped again.
+            parts.prepare_for_new_round();
             
             if round_i > 0 {
                 shuffle!(hpart_vec_a);
@@ -95,10 +88,9 @@ fn main() {
      
             'grouping_participants: for &hpart_a in &hpart_vec_a {
 
-                let mut ps = ParticipantSet::new();
-            
                 'trying_regroups: for _ in 0..num_regroups {
                     
+                    // Try to find a group for hpart_a.
                     if parts.try_join_groups(hpart_a, 
                                              hround,
                                              &rounds, 
@@ -109,32 +101,31 @@ fn main() {
                     } else {
                         // Didn't find a group - get another participant to 
                         // regroup to see if an opening can be made.
-
-                        //shuffle!(hpart_vec_b);
-
+                        
+                        shuffle!(hpart_vec_b);
+                        
                         for &hpart_b in &hpart_vec_b {
-                            if ps.has(hpart_b) ||
-                               !parts.is_grouped(hpart_b) ||
-                              (randint!(0, 1) != 0 &&
+                            if !parts.is_grouped(hpart_b) ||
                                !parts.is_acquainted_participant(hpart_a, 
-                                                                hpart_b)) {
+                                                                hpart_b) {
+                                // If hpart_b already regrouped, or is not 
+                                // grouped, or is not acquainted with hpart_a, 
+                                // then skip to next regroup candidate.
                                 continue;
                             }   
-                            let mut round_num = randint!(1, round_i);
+                            // Pick a round to make the move in.
+                            let round_num = randint!(1, round_i);
+                            
+                            // Attempt the regroup. On success go back and try
+                            // again to group hpart_a.
                             match parts.try_regroup(hpart_b, 
                                                     hround_vec[round_num],
                                                     &rounds,
                                                     &mut groups ) {
-                                Ok(hpart_c) => {
-                                    if hpart_c != HPARTICIPANT_NULL {
-                                        ps.add(hpart_c);
-                                    }
+                                Ok(_) => {
                                     continue 'trying_regroups;
                                 },
-                                Err(_) => { 
-                                    //shuffle!(hpart_vec_b);
-                                    //continue 'trying_regroups;
-                                },
+                                _ => { },
                             }
                         }
                     }
