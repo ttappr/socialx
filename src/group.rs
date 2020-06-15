@@ -53,21 +53,18 @@ impl Groups {
         }
         handles
     }
+    #[allow(dead_code)]
     pub fn free_all(&mut self) {
         self.insts.clear();
         self.next_idx = 0;
     }
     /// Returns the number of Group instances.
+    #[allow(dead_code)]
     pub fn count(&self) -> usize {
         self.insts.len()
     }
-    /// Returns `true` if the participant `hp` has acquaintances in the group.
-    /*
-    pub fn is_acquainted(&self, hg: HGroup, hp: HParticipant) -> bool {
-        self.get(hg).members.has(hp)
-    }
-    */
     /// Returns a handle for the Group at the specified index.
+    #[allow(dead_code)]
     pub fn hget(&self, idx: usize) -> HGroup {
         HGroup { idx }
     }
@@ -80,9 +77,6 @@ impl Groups {
     #[inline]
     fn mget(&mut self, hg: HGroup) -> &mut Group {
         &mut self.insts[hg.idx]
-    }
-    pub fn len(&self) -> usize {
-        self.insts.len()
     }
     /// Clears the member lists of all groups.
     pub fn reset(&mut self) {
@@ -120,10 +114,12 @@ impl Groups {
         self.get(hg).members.count()
     }
     /// Returns an iterator that emits HGroup handles for the Groups object.
+    #[allow(dead_code)]
     pub fn iter(&self) -> GroupIter {
         GroupIter::new(self.insts.len())
     }
     /// Returns a vector containing all the handles of the groups.
+    #[allow(dead_code)]
     pub fn handle_vec(&self) -> Vec<HGroup> {
         GroupIter::get_vec(self.insts.len())
     }
@@ -138,6 +134,7 @@ pub struct GroupIter {
     count : usize,
 }
 impl GroupIter {
+    #[allow(dead_code)]
     fn new(num: usize) -> Self {
         GroupIter { num, count: 0 }
     }

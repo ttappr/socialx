@@ -70,12 +70,8 @@ impl Participants {
         }
         handles
     }
-    /// Clears the internal vector of Participants.
-    pub fn free_all(&mut self) {
-        self.insts.clear();
-        self.next_idx = 0;
-    }
     /// Returns the handle requested by position in the internal vector.
+    #[allow(dead_code)]
     pub fn hget(&self, idx: usize) -> HParticipant {
         HParticipant { idx }
     }
@@ -91,6 +87,7 @@ impl Participants {
         &mut self.insts[hp.idx]
     }
     /// Returns the number of Participants.
+    #[allow(dead_code)]
     pub fn count(&self) -> usize {
         self.insts.len()
     }
@@ -100,9 +97,11 @@ impl Participants {
     }
     /// Returns an iterator for the Participants.
     /// HParticipant handles are the item type of the iterator.
+    #[allow(dead_code)]
     pub fn iter(&self) -> ParticipantIter {
         ParticipantIter::new(self.insts.len())
     }
+    #[allow(dead_code)]
     pub fn handle_vec(&self) -> Vec<HParticipant> {
         ParticipantIter::new(self.insts.len()).collect()
     }
@@ -111,6 +110,7 @@ impl Participants {
     }
     /// Returns the Group for the Participant.
     #[inline]
+    #[allow(dead_code)]
     pub fn group(&self, hp: HParticipant) -> HGroup {
         self.get(hp).group
     }
@@ -248,7 +248,7 @@ impl Participants {
                        groups   : &mut Groups    ) -> Result<HParticipant,()> {
                        
         let mut result = Err(());
-        let mut hg     = rounds.participant_group(hr, hp, groups);
+        let     hg     = rounds.participant_group(hr, hp, groups);
 
         if hg == HGROUP_NULL {
             return result;
@@ -386,17 +386,6 @@ impl ParticipantSet {
         HParticipant { idx: ((N_SET_BITS - 1) - lz) as usize }
     }
 }
-/*
-impl fmt::Display for ParticipantSet {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let parts = vec![];
-        for p in self.iter() {
-            parts.push(p.to_string());
-        }
-        write!(f, "[{}]", parts.join(", ") )
-    }    
-}
-*/
 
 /// An iterator for the ParticipantSet.
 /// The iterator will return HParticipant handles for each member of the set.
@@ -443,6 +432,7 @@ impl ParticipantIter {
     fn new(num: usize) -> Self {
         ParticipantIter { num, count: 0 }
     }
+    #[allow(dead_code)]
     fn get_vec(num: usize) -> Vec<HParticipant> {
         ParticipantIter::new(num).collect()
     }
