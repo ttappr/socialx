@@ -16,11 +16,11 @@ struct Round {
 
 /// The aggregate class that holds the Round objects and assicates them with
 /// their handles and provides their interface.
+#[derive(Default)]
 pub struct Rounds {
     next_idx : usize,
     insts    : Vec<Round>,
 }
-
 impl Rounds {
     /// Returns the aggregate object for Round's.
     pub fn new() -> Self {

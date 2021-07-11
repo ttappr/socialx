@@ -15,11 +15,9 @@
 //! the Social Golf problem where golfers are teamed up with other golfers in
 //! a tournament with the same restrictions to ensure all the golfers meet
 //! and play against as many other golfers as possible.
-
-#![allow(unused_macros, bare_trait_objects, unused_imports, unused_variables,
-         unused_mut, dead_code)]
          
 pub mod participant;
+pub mod participant_set;
 pub mod group;
 pub mod round;
 

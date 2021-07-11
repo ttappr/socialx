@@ -17,6 +17,7 @@
 //! and play against as many other golfers as possible.
 
 mod participant;
+mod participant_set;
 mod group;
 mod round;
 
@@ -27,6 +28,7 @@ use round::*;
 
 use itertools::enumerate;
 use rand::prelude::*;
+use std::env;
 use std::process;
 use std::sync::{Arc, RwLock};
 
@@ -39,18 +41,30 @@ macro_rules! randint {
 
 // For declaring and accessing a value between threads.
 macro_rules! shared { 
-    (        $shared:expr ) => { Arc::new(RwLock::new($shared)) }; 
+    (        $shared:ty   ) => { Arc::new(RwLock::new(<$shared>::default())) }; 
     ( write, $shared:expr ) => { *$shared.write().unwrap() };
     ( read,  $shared:expr ) => { *$shared.read() .unwrap() };
 }
 
 fn main() {
-    let num_attempts         = 25_000;
-    
+    let num_attempts;
                                    // Kirkman's Schoolgirl's   Conference
-    let num_participants     = 15; //         15;                   70;
-    let num_rounds           =  7; //          7;                    5;
-    let num_groups_per_round =  5; //          5;                   10;
+    let num_participants;          //         15;                   70;
+    let num_rounds;                //          7;                    5;
+    let num_groups_per_round;      //          5;                   10;
+    
+    match parse_options() {
+        Ok(opts) => { 
+            num_attempts         = opts.n_attempts;
+            num_participants     = opts.n_participants;
+            num_rounds           = opts.n_rounds;
+            num_groups_per_round = opts.n_groups;
+        },
+        Err(msg) => {
+            println!("{}", &msg);
+            return;
+        }
+    }
     
     let num_groups_total     = num_groups_per_round * num_rounds;
     let num_regroups         = num_participants * 2;
@@ -69,16 +83,20 @@ fn main() {
 
     // For tracking the best distribution of the cycles.
     let mut best_num_grouped = 0;
-    let     best_rounds_str  = shared!("".to_string());
+    let     best_rounds_str  = shared!(String);
 
     let brc = best_rounds_str.clone();    
     
+    // Handler for Ctrl-C events.
     ctrlc::set_handler(move || {
         println!("received Ctrl+C!");
         println!("{}", shared!(read, brc));
         process::exit(0);
     })
     .expect("Error setting Ctrl-C handler");
+    
+    let hpart_vec_b_len = hpart_vec_b.len();
+    let mut hpart_b_idx = 0;
     
     #[allow(unused_labels)]
     'start_fresh: for attempt_i in 0..num_attempts {
@@ -130,12 +148,12 @@ fn main() {
                 // Randomize the order in which participants are grouped after
                 // the first round.
                 shuffle!(hpart_vec_a);
+                shuffle!(hpart_vec_b);
+                hpart_b_idx = 0;
             }
      
             'grouping_participants: for &hpart_a in &hpart_vec_a {
-
-                let mut moved = ParticipantSet::new();
-
+                
                 'trying_regroups: for _ in 0..num_regroups {
                     
                     // Try to find a group for hpart_a.
@@ -149,37 +167,30 @@ fn main() {
                     } else {
                         // Didn't find a group - get another participant to 
                         // regroup to see if an opening can be made.
+
+                        for _ in 0..hpart_vec_b_len {
+                            hpart_b_idx += 1;
+                            hpart_b_idx %= hpart_vec_b_len;
+                            let hpart_b  = hpart_vec_b[hpart_b_idx];
                         
-                        shuffle!(hpart_vec_b);
-                        
-                        for &hpart_b in &hpart_vec_b {
-                            if  moved.has(hpart_b)        ||
-                               !parts.is_grouped(hpart_b) ||
-                               !parts.is_acquainted_participant(hpart_a, 
-                                                                hpart_b) {
-                                // If hpart_b already regrouped, or is not 
-                                // grouped, or is not acquainted with hpart_a, 
-                                // then skip to next regroup candidate.
-                                continue;
-                            }   
+                            if !parts.is_grouped(hpart_b) { continue; }   
+                            
                             // Pick a round to make the move in.
                             let round_num = randint!(1, round_i);
                             
                             // Attempt the regroup. On success go back and try
                             // again to group hpart_a.
-                            match parts.try_regroup(hpart_b, 
-                                                    hround_vec[round_num],
-                                                    &rounds,
-                                                    &mut groups ) {
-                                Ok(_) => {
-                                    moved.add(hpart_b);
+                            if parts.try_regroup(hpart_b, 
+                                                 hround_vec[round_num],
+                                                 &rounds,
+                                                 &mut groups ).is_ok() {
+                                                      
                                     continue 'trying_regroups;
-                                },
-                                _ => { 
-                                    moved.clear();
-                                },
                             }
                         }
+                        // The regroup loop completed, which means all the other
+                        // participants tried to regroup and none succeeded.
+                        continue 'start_fresh;
                     }
                 }
             }
@@ -189,6 +200,57 @@ fn main() {
     println!("{}", shared!(read, best_rounds_str));
 }
 
+struct Options {
+    n_attempts      : usize,
+    n_participants  : usize,
+    n_groups        : usize,
+    n_rounds        : usize,
+}
+
+fn parse_options() -> Result<Options, String>
+{
+    let     args = env::args().collect::<Vec<_>>();
+    let mut opts = Options { n_attempts: 1_000_000, n_participants: 70,
+                             n_groups  :        10, n_rounds      :  5 };
+    for pair in args[1..].chunks(2) {
+        let mut pair = pair.into_iter();
+        let     opt  = pair.next().unwrap().as_str();
+        let mut getv = || pair.next()
+                              .ok_or(format!("Missing value for {}.", opt))?
+                              .parse::<usize>()
+                              .map_err(|s| format!("Invalid value \
+                                                   ({}) for {}.", s, opt));
+        match opt {
+            "-a" => { 
+                opts.n_attempts = getv()?; 
+            },
+            "-p" => { 
+                opts.n_participants = getv()?; 
+            },
+            "-g" => { 
+                opts.n_groups = getv()?; 
+            },
+            "-r" => { 
+                opts.n_rounds = getv()?; 
+            },
+            "-h" | "--h" | "--help" => {
+                Err("usage: socialx [-h] | [-a A] [-p P] [-g G] [-r R]\n\n\
+                     An approach to solving problems modeled after \
+                     \"Kirkman's Schoolgirl Problem\".\n\n\
+                     Optional Arguments:\n  \
+                       -h, --help show this message and exit.\n  \
+                       -a A       number of attempts to solve (1_000_000).\n  \
+                       -p P       number of participants (70).\n  \
+                       -g G       number of groups per round (10).\n  \
+                       -r R       number of rounds (5).\n")?;
+            },
+            _    => {
+                Err(format!("Unknown option {}.", opt))?;
+            },
+        }
+    }
+    Ok(opts)
+}
 
 
 

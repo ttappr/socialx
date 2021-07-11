@@ -1,6 +1,7 @@
 
 use std::fmt;
 use crate::participant::*;
+use crate::participant_set::*;
 
 pub const HGROUP_NULL: HGroup = HGroup { idx: usize::MAX };
 
@@ -28,11 +29,11 @@ impl fmt::Display for Group {
 }
 
 /// The public interface to the Groups.
+#[derive(Default)]
 pub struct Groups {
     next_idx : usize,
     insts    : Vec<Group>,
 }
-
 impl Groups {
     /// Creates a new Groups object.
     pub fn new() -> Self {
@@ -97,7 +98,7 @@ impl Groups {
     }
     /// Adds the participant `hp` to group `hg`.
     pub fn add(&mut self, hg: HGroup, hp: HParticipant) {
-        debug_assert!(self.get(hg).members.has(hp) == false);
+        debug_assert!(!self.get(hg).members.has(hp));
         self.mget(hg).members.add(hp);
     }
     /// Removes the participant from group hg.
