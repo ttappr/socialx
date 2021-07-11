@@ -13,3 +13,14 @@ Optional Arguments:
   -g G       number of groups per round (10).
   -r R       number of rounds (5).
 ```
+
+For the original schoolgirl problem:
+
+```console
+socialx -p 15 -r 7 -g 5
+```
+For 5 rounds of grouping 70 participants in 10 groups:
+
+```console
+socialx -p 70 -r 5 -g 10
+```
