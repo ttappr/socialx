@@ -1,5 +1,5 @@
 # socialx
-Solves problems related to "Kirkman's Schoolgirl Problem".
+Solves problems related to "[Kirkman's Schoolgirl Problem](https://en.wikipedia.org/wiki/Kirkman%27s_schoolgirl_problem)".
 
 ```console
 usage: socialx [-h] | [-a A] [-p P] [-g G] [-r R]
