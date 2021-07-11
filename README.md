@@ -24,3 +24,9 @@ For 5 rounds of grouping 70 participants in 10 groups:
 ```console
 socialx -p 70 -r 5 -g 10
 ```
+
+If you wish to build the project, just install the Rust environment - [instructions here](https://www.rust-lang.org/tools/install). 
+
+And once that's in place simply clone this project, `cd` in to the project root and issue: `cargo build --release`
+
+The `socialx` binary will be in the `target/release` folder.
