@@ -24,6 +24,7 @@ For 5 rounds of grouping 70 participants in 10 groups:
 ```console
 socialx -p 70 -r 5 -g 10
 ```
+Linux and Windows binaries available [here](https://github.com/ttappr/socialx/releases/tag/0.1.0).
 
 If you wish to build the project, just install the Rust environment - [instructions here](https://www.rust-lang.org/tools/install). 
 
