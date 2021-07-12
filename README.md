@@ -1,5 +1,5 @@
 # socialx
-Solves problems related to "[Kirkman's Schoolgirl Problem](https://en.wikipedia.org/wiki/Kirkman%27s_schoolgirl_problem)".
+Solves problems related to "[Kirkman's Schoolgirl Problem](https://en.wikipedia.org/wiki/Kirkman%27s_schoolgirl_problem)", assuming that with the given parameters the problem actually *is solvable*. I give a couple examples below for solvable configurations. The program should take less than a second to find a solution, but if it's taking considerably longer, pressing [ctrl]-C will terminate it and it will print the best solution arrived at so far.
 
 ```console
 usage: socialx [-h] | [-a A] [-p P] [-g G] [-r R]
