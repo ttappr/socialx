@@ -1,7 +1,7 @@
 # socialx
 Solves problems related to "[Kirkman's Schoolgirl Problem](https://en.wikipedia.org/wiki/Kirkman%27s_schoolgirl_problem)", assuming the given parameters are solvable, or the number of rounds chosen to solve for is limited. The program should take less than a second to find a solution, but if it's taking considerably longer, pressing [ctrl]-C will terminate it and it will print the best solution arrived at so far.
 
-This program can quickly solve the schoolgirl problem with its original parameters, but in the decades since it was first published it has been solved from more than 7 rounds. This program will take considerably more time to find a solution beyond 7 if it even can.
+This program has some limitations and may not be able to solve some of the more extensive cases. For instance, in a social golf scenario with 24 participants divided into 8 groups (of 4 players each) the number of rounds/days they can be solved for is supposed to be 10, but this program can only work out 7 of the rounds quickly.
 
 ```console
 usage: socialx [-h] | [-a A] [-p P] [-g G] [-r R]
