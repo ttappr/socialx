@@ -1,5 +1,5 @@
 # socialx (a social mixer event tool)
-If you're organizing an event where you want to divide people into groups, then have them change groups for several rounds where each person never groups with the same person twice, then you may find this tool useful.
+If you're organizing an event where you want to divide people into groups, then have them change groups for several rounds where each person never groups with the same person twice, then you may find this tool useful. Compared to other similar tools online, this one arrives at solutions very quickly.
 
 This tool solves problems related to "[Kirkman's Schoolgirl Problem](https://en.wikipedia.org/wiki/Kirkman%27s_schoolgirl_problem)", assuming the given parameters are solvable, or the number of rounds chosen to solve for is within reason. The program should take less than a second to find a solution, but if it's taking considerably longer, pressing [ctrl]-C will terminate it and it will print the best solution arrived at so far.
 
