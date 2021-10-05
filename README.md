@@ -6,7 +6,7 @@ This application solves problems related to "[Kirkman's Schoolgirl Problem](http
 
 It's very quick at solving many sets of parameters including the classic school girl's configuration, or many Social Golf scenarios. However, there are some sets of parameters for which solutions are known, which this tool would take considerable time solving. For instance one notable Social Golf scenario is 32 golfers who want to get to play with different people each day in groups of 4, over the course of 10 days.
 
-If using this as a tool to generate groups for an event, you can choose your group sizes and number of rounds in many ways that are quickly solvable. Group sizes can be decreased, or rounds can be reduced. This tool should give enough of a range for flexibility.
+If using this as a tool to generate groups for an event, you can choose your group sizes and number of rounds in many ways that are quickly solvable. Group sizes can be decreased, or rounds can be reduced. This tool should give enough of a useful range of possible scenarios with some flexibility.
 
 ```console
 usage: socialx [-h] | [-a A] [-p P] [-g G] [-r R]
