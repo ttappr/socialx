@@ -1,4 +1,4 @@
-# socialx (Social Mixer Event Tool)
+# socialx (a social mixer event tool)
 Solves problems related to "[Kirkman's Schoolgirl Problem](https://en.wikipedia.org/wiki/Kirkman%27s_schoolgirl_problem)", assuming the given parameters are solvable, or the number of rounds chosen to solve for is within reason. The program should take less than a second to find a solution, but if it's taking considerably longer, pressing [ctrl]-C will terminate it and it will print the best solution arrived at so far.
 
 This program has some limitations and may not be able to solve some of the more extensive cases. For instance, in a social golf scenario with 24 participants divided into 8 groups (of 4 players each) the number of rounds/days it can be solved for is supposed to be 10, but this program can only work out 9 of the rounds quickly (in less than a second). 
