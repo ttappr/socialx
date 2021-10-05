@@ -5,7 +5,7 @@ This tool solves problems related to "[Kirkman's Schoolgirl Problem](https://en.
 
 This program has some limitations and may not be able to solve some of the more extensive cases in a blink of the eye. For instance, in a social golf scenario with 24 participants divided into 8 groups (of 3 players each). This program can work out 9 rounds in a split second. Getting 10 rounds complete, may take it a minute - or longer on a slow CPU. 
 
-The total number of particpants should be evenly divided into groups for input. In a real world scenario, virutal participants can be considered as group fillers, or a group here and there can have an extra person or two arbitrarily assigned who weren't included in the tool parameters. If the tool is taking considerable time on a set of parameters, consider reducing the number of rounds to get a faster solution, or consider smaller groups.
+The total number of particpants should be evenly divided into groups for input. In a real world scenario, virtual participants can be considered as group fillers, or a group here and there can have an extra person or two arbitrarily assigned who weren't included in the tool parameters. If the tool is taking considerable time on a set of parameters, consider reducing the number of rounds to get a faster solution, or consider smaller groups.
 
 ```console
 usage: socialx [-h] | [-a A] [-p P] [-g G] [-r R]
