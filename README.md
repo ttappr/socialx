@@ -1,14 +1,12 @@
-# socialx (a social mixer event tool)
+# socialx
 
 Linux and Windows binaries available [here](https://github.com/ttappr/socialx/releases/tag/0.1.0).
 
-If you're organizing an event where you want to divide people into groups, then have them change groups for several rounds where each person never groups with the same person twice, then you may find this tool useful. Compared to other similar tools online, this one arrives at solutions very quickly.
+This application solves problems related to "[Kirkman's Schoolgirl Problem](https://en.wikipedia.org/wiki/Kirkman%27s_schoolgirl_problem)", assuming the given parameters are solvable, or the number of rounds chosen to solve for is within reason. The program should take less than a second to find a solution, but if it's taking considerably longer, pressing [ctrl]-C will terminate it and it will print the best solution arrived at so far.
 
-This tool solves problems related to "[Kirkman's Schoolgirl Problem](https://en.wikipedia.org/wiki/Kirkman%27s_schoolgirl_problem)", assuming the given parameters are solvable, or the number of rounds chosen to solve for is within reason. The program should take less than a second to find a solution, but if it's taking considerably longer, pressing [ctrl]-C will terminate it and it will print the best solution arrived at so far.
+It's very quick at solving many sets of parameters including the classic school girl's configuration, or many Social Golf scenarios. However, there are some sets of parameters for which solutions are known, which this tool would take considerable time solving. For instance one notable Social Golf scenario is 32 golfers who want to get to play with different people each day in groups of 4, over the course of 10 days.
 
-This program has some limitations and may not be able to solve some of the more extensive cases in a blink of the eye. For instance, in a social golf scenario with 24 participants divided into 8 groups (of 3 players each). This program can work out 9 rounds in a split second. Getting 10 rounds complete, may take it a minute - or longer on a slow CPU. Another limitation is it can handle a max of 128 participants due to its internal representation of participant sets as `u128` bitfields. This data representation for sets is partly what makes the tool so fast. The source code can be modified to increase this range.
-
-The total number of particpants should be evenly divided into groups for input. In a real world scenario, virtual participants can be considered as group fillers, or a group here and there can have an extra person or two arbitrarily assigned who weren't included in the tool parameters. If the tool is taking considerable time on a set of parameters, consider reducing the number of rounds to get a faster solution, or consider smaller groups.
+If using this as a tool to generate groups for an event, you can choose your group sizes and number of rounds in many ways that are quickly solvable. Group sizes can be decreased, or rounds can be reduced. This tool should give enough of a range for flexibility.
 
 ```console
 usage: socialx [-h] | [-a A] [-p P] [-g G] [-r R]
