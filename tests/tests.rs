@@ -2,6 +2,7 @@
 // todd:socialx$ cargo test --test tests
 
 use socialx::participant::*;
+use socialx::participant_set::*;
 use socialx::group::*;
 use socialx::round::*;
 
