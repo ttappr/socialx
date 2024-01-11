@@ -102,3 +102,63 @@ Round_7:
     Group_34: [ 6,  9, 12]
     Group_35: [ 5,  7, 11]
 ```
+
+# How It Works
+
+The file, `main.rs` holds the primary algorithm, while the other files of the
+project implement the objects that provide facilitating features. The objects
+of the system exist within vectors, making them contiguously allocated to
+achieve CPU cache efficiency. Handles, instead of pointers, are used to 
+reference these objects. The handles are basically indexes into the vectors
+holding the objects.
+
+The parameters passed to the application via the command line are used to set
+the number of participants in the social event, the number of groups they
+will be assigned to, and the number of rounds. Also, the number of attempts
+to find a solution sets an upper bound on when the algorithm should give up.
+
+In the first round of assignments, none of the participants has made any 
+acquaintances yet, so they are simply assigned to their initial groups in 
+numeric order. Each of the participants has an `acquaintances` set, implemented
+as an `u128` value where the bits reprepresent the other participants. 
+
+This design choice makes set operations very quick. Knowing if two participants
+are already acquainted involves a quick bitwise operation. Likewise determining
+whether a participant about to be added to a group has any previous 
+acquaintances in the group is a quick bitwise operation.
+
+As the rounds progress, each of the participants is assigned to a group they
+have no acquaintances in. If the situation arises where there are no groups
+available where the participant to be added doesn't have acquaintances,
+previous groups from preceding rounds are accessed to move participants around
+in an attempt to remove previous acquaintances from the current participant's
+`acquaintances` set. Performed enough times the participant will eventually
+find a current group with no acquaintances.
+
+The participant group assignments just described can be found in the code in
+the `main.rs` file in the loop labeled `grouping_participants`. The backtracking
+loop is within this outer loop. The call to `Participants.try_regroup()`
+implements the regrouping strategy. The implementation can be found in the 
+`participant.rs` file.
+
+This implementation doesn't strictly hold to the concept of "backtracking" since
+there isn't a stack of groupings that groups or rounds get popped from in order
+to go back to a previous round to make an adjustment. These adjustments to 
+previous groupings don't require discarding all the subsequent groupings that
+formed after the one being adjusted.
+
+The previous groups can be treated as a flat list on which bitwise set 
+operations are performed in order to change the acquaintance relationships 
+between participants as represented by their own bitfield `acquaintance` sets.
+
+While performing group assignments, the acquaintances are randomly shuffled.
+It can happen where the group assignments are such that going back and adjusting
+previous rounds won't free up a group for the current participant about to be
+added. In this case, the algorithm starts over, discarding all groups and 
+clearing all the `acquaintance` sets. Each subsequent attempt to find a solution
+should be different due to the random shuffling.
+
+As mentioned earlier, data locality and cache efficiency are optimized, as are
+the set operations, so the attempts at finding a solution are very quick. The 
+algorithm can perform tens of thousands attempts in less than a second, for 
+instance, to solve the classic schoolgirl problem.
